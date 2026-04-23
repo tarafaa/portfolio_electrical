@@ -148,7 +148,7 @@ Fixed resistors for signal conditioning
 Optional actuators (servos or control outputs)
 Optional communication module (Bluetooth HC-09)
 ## Data Flow
-Finger Motion → Flex Sensor → Analog Voltage → ADC (Microcontroller) → Processed Output
+Finger Motion → Flex Sensor → Analog Voltage → ADC (Arduino Uno) → Processed Output
 ## Key Features
 Real-time detection of finger movement
 Analog signal acquisition and processing
@@ -166,7 +166,7 @@ Electrical Configuration
 
 The flex sensor is implemented using a voltage divider circuit to produce a measurable analog voltage.
 
-5V ─── Flex Sensor ────┬──→ Analog Input (Microcontroller)
+5V ─── Flex Sensor ────┬──→ Analog Input (Arduino Uno)
                        │
                   Fixed Resistor
                        │
