@@ -142,7 +142,7 @@ The system processes sensor data in real time using a microcontroller and transl
 
 ## System Architecture
 ## Components
-Microcontroller (Arduino Nano or compatible)
+Microcontroller (Arduino Uno) - Glove and Mech Hand
 Flex sensors (one per finger)
 Fixed resistors for signal conditioning
 Optional actuators (servos or control outputs)
