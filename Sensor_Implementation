@@ -121,5 +121,5 @@ do {
 } while (u8g2.nextPage());
 
     delay(1000);
-}
-}
+} // goal: include connection module - 4/30
+} 
