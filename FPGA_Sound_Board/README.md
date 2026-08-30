@@ -8,7 +8,7 @@ The project was developed for **EGEC 446 — Advanced Digital Design** and demon
 
 ## 🎥 Project Demo
 
-[![See & Say FPGA SoundBoard Demo](https://img.youtube.com/vi/AyihwfW5y8o/maxresdefault.jpg)](https://www.youtubeeducation.com/watch?v=AyihwfW5y8o)
+[![See & Say FPGA SoundBoard Demo](https://www.youtube.com/watch?v=AyihwfW5y8o)
 
 **▶ Click the image above to watch the FPGA SoundBoard demonstration.**
 
