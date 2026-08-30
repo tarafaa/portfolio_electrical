@@ -1,8 +1,8 @@
-# 🦾 Robotic Hand Glove Controller
+# 🦾 Bluetooth Robotic Hand
 
-An embedded systems project developed using an **Arduino Uno (ATmega328P)**, flex sensors, and servo motors to translate human finger movement into real-time robotic hand motion.
+An embedded systems project using **two Arduino Uno (ATmega328P) microcontrollers** to wirelessly translate human finger movements into real-time robotic hand motion.
 
-Five flex sensors mounted on a wearable glove provide analog measurements of finger position. The microcontroller processes and maps these sensor readings to servo positions controlling each finger of the robotic hand.
+Five flex sensors mounted on a wearable glove measure individual finger positions. The first Arduino Uno acquires and processes the sensor measurements, then transmits the control data over Bluetooth to a second Arduino Uno. The receiving microcontroller converts the transmitted finger positions into servo commands that control the robotic hand.
 
 ---
 
@@ -14,6 +14,7 @@ Five flex sensors mounted on a wearable glove provide analog measurements of fin
 - [Hardware](#hardware)
 - [Firmware](#firmware)
 - [Sensor Processing](#sensor-processing)
+- [Wireless Communication](#wireless-communication)
 - [Embedded Systems Concepts](#embedded-systems-concepts)
 - [Project Images](#project-images)
 - [Future Improvements](#future-improvements)
@@ -22,58 +23,61 @@ Five flex sensors mounted on a wearable glove provide analog measurements of fin
 
 ## Project Overview
 
-The goal of this project was to develop an embedded system capable of translating human finger movements into corresponding movements on a robotic hand.
+The goal of this project was to develop a wireless embedded system capable of translating human finger movements into corresponding movements on a robotic hand.
 
-Five flex sensors mounted on a glove measure the position of the user's fingers. The Arduino Uno acquires the analog sensor signals through its ADC and maps each measurement to a corresponding servo position.
+The system is divided into two embedded nodes:
 
-To improve stability, multiple sensor samples are averaged before calculating the requested servo angle. A small angular deadband is also used to reduce unnecessary servo movement caused by sensor noise.
+**Glove Controller**  
+An Arduino Uno reads five flex sensors through its analog inputs. The sensor measurements are processed and converted into finger-position data before being transmitted wirelessly.
 
-The project involved:
+**Robotic Hand Controller**  
+A second Arduino Uno receives the transmitted data and controls five servo motors corresponding to the thumb, index, middle, ring, and pinky fingers.
 
-- Embedded firmware development
-- Analog sensor acquisition
-- ADC-based measurements
-- Servo motor control
-- Sensor calibration
-- Signal filtering
-- Hardware-software integration
-- Circuit prototyping
-- Hardware debugging
+This project involved sensor acquisition, microcontroller programming, wireless communication, actuator control, calibration, circuit prototyping, and hardware-software integration.
 
 ---
 
 ## Hardware Demo
 
-The prototype demonstrates flex sensor input being translated into physical movement of the servo-controlled robotic hand.
+The prototype demonstrates flex sensor measurements from the wearable glove being translated into physical movement of the robotic hand.
 
-<!-- Add GitHub video attachment here -->
+<!-- Drag Robotic_Hand_Prototyping.mov here using the GitHub README editor -->
 
 ---
 
 ## System Architecture
 
 ```text
-       Wearable Sensor Glove
-               │
-        Five Flex Sensors
+        WEARABLE GLOVE
+             
+       Five Flex Sensors
            A0 - A4
+              │
+              │ Analog
+              ▼
+     ┌───────────────────┐
+     │   Arduino Uno #1  │
+     │    ATmega328P     │
+     │                   │
+     │  ADC Acquisition  │
+     │        ↓          │
+     │ Sensor Processing │
+     │        ↓          │
+     │ Data Transmission │
+     └─────────┬─────────┘
                │
-               │ Analog Signals
+               │ Bluetooth
                ▼
-      ┌──────────────────┐
-      │   Arduino Uno    │
-      │    ATmega328P    │
-      │                  │
-      │  ADC Acquisition │
-      │        ↓         │
-      │ Moving Average   │
-      │        ↓         │
-      │ Sensor Mapping   │
-      │        ↓         │
-      │  Servo Control   │
-      └────────┬─────────┘
+     ┌───────────────────┐
+     │   Arduino Uno #2  │
+     │    ATmega328P     │
+     │                   │
+     │  Receive Commands │
+     │        ↓          │
+     │   Servo Control   │
+     └─────────┬─────────┘
                │
-               │ Servo Commands
+               │ PWM
                ▼
         Five Servo Motors
                │
@@ -85,100 +89,123 @@ The prototype demonstrates flex sensor input being translated into physical move
 
 ## Hardware
 
-| Component | Purpose |
+| Component | Quantity | Purpose |
+|---|---:|---|
+| Arduino Uno (ATmega328P) | 2 | Glove and robotic hand controllers |
+| Flex Sensors | 5 | Measure individual finger movement |
+| Servo Motors | 5 | Control robotic finger positions |
+| Bluetooth Modules | 2 | Wireless communication between controllers |
+| Sensor Glove | 1 | Wearable sensor interface |
+| Robotic Hand | 1 | Mechanical output system |
+| Prototype Circuitry | — | Sensor, communication, and actuator connections |
+
+### Glove Controller
+
+The first Arduino Uno interfaces with the five flex sensors:
+
+| Finger | Analog Input |
 |---|---|
-| Arduino Uno | Main embedded controller |
-| ATmega328P | Microcontroller |
-| 5 Flex Sensors | Measure individual finger movement |
-| 5 Servo Motors | Control robotic finger positions |
-| Sensor Glove | Wearable sensor interface |
-| Robotic Hand | Mechanical output system |
-| Prototype Circuitry | Sensor and actuator connections |
+| Thumb | A0 |
+| Index | A1 |
+| Middle | A2 |
+| Ring | A3 |
+| Pinky | A4 |
 
-### Pin Assignments
+### Robotic Hand Controller
 
-| Finger | Flex Sensor | Servo |
-|---|---|---|
-| Thumb | A0 / ADC0 | D2 |
-| Index | A1 / ADC1 | D3 |
-| Middle | A2 / ADC2 | D5 |
-| Ring | A3 / ADC3 | D6 |
-| Pinky | A4 / ADC4 | D4 |
+The second Arduino Uno controls the five servo motors:
+
+| Finger | Servo Pin |
+|---|---|
+| Thumb | D2 |
+| Index | D3 |
+| Pinky | D4 |
+| Middle | D5 |
+| Ring | D6 |
 
 ---
 
 ## Firmware
 
-The original robotic hand was implemented using **Arduino C++** on the Arduino Uno.
+The original system firmware was developed using **Arduino C++** for the ATmega328P-based Arduino Uno.
 
-The firmware performs four primary operations:
-
-1. Acquire analog measurements from the five flex sensors.
-2. Average multiple ADC samples to reduce sensor noise.
-3. Convert the calibrated sensor measurements into finger angles.
-4. Update the corresponding servo when the requested angle changes.
-
-### Sensor Calibration
-
-The flex sensors were calibrated using raw ADC measurements representing the extended and closed finger positions.
-
-```cpp
-RAW_EXTENDED = 256
-RAW_CLOSED   = 59
-```
-
-The calibrated values are mapped to approximately:
+Because the project uses two microcontrollers, the firmware can be separated into two primary components:
 
 ```text
-0°  → Finger Extended
-90° → Finger Closed
+firmware/
+│
+├── glove_controller/
+│   └── glove_controller.ino
+│
+└── hand_controller/
+    └── hand_controller.ino
 ```
 
-### Jitter Reduction
+### Glove Controller
 
-A four-sample moving average is applied to each flex sensor:
+The glove-side firmware is responsible for:
 
-```cpp
-SMOOTH_N = 4
-```
+1. Reading the five flex sensors.
+2. Filtering the analog measurements.
+3. Applying sensor calibration.
+4. Converting measurements into finger-position data.
+5. Transmitting the resulting data over Bluetooth.
 
-A small angular deadband prevents unnecessary servo updates:
+### Robotic Hand Controller
 
-```cpp
-DEADBAND_DEG = 1
-```
+The hand-side firmware is responsible for:
 
-This helps reduce visible servo jitter caused by small variations in the analog sensor readings.
+1. Receiving finger-position data over Bluetooth.
+2. Parsing the received commands.
+3. Mapping the received values to servo positions.
+4. Updating the five servo motors.
 
 ---
 
 ## Sensor Processing
 
-The firmware processing sequence is:
+The glove controller processes each flex sensor independently.
 
 ```text
-Flex Sensor
-     │
-     ▼
+Finger Movement
+      │
+      ▼
+ Flex Sensor
+      │
+      ▼
 ADC Measurement
-     │
-     ▼
-4-Sample Moving Average
-     │
-     ▼
-Sensor Calibration
-     │
-     ▼
-Raw ADC → Finger Angle
-     │
-     ▼
-Angular Deadband
-     │
-     ▼
-Servo Position
+      │
+      ▼
+Sensor Filtering
+      │
+      ▼
+Calibration
+      │
+      ▼
+Finger Position
+      │
+      ▼
+Bluetooth Transmission
 ```
 
-Each sensor is processed independently, allowing the five robotic fingers to respond to their corresponding flex sensors.
+Calibration allows the system to associate raw flex-sensor measurements with the physical extended and closed positions of each finger.
+
+---
+
+## Wireless Communication
+
+Bluetooth provides the communication link between the two Arduino Uno controllers.
+
+```text
+Glove Uno                     Hand Uno
+ATmega328P                   ATmega328P
+    │                            ▲
+    ▼                            │
+Bluetooth  ─ ─ ─ Wireless ─ ─ Bluetooth
+   TX                              RX
+```
+
+This separates sensor acquisition from robotic hand actuation and allows the glove to control the hand without a physical connection between the two embedded systems.
 
 ---
 
@@ -188,15 +215,18 @@ This project demonstrates experience with:
 
 - Embedded C/C++
 - Arduino Uno / ATmega328P
+- Multi-microcontroller system integration
 - Analog-to-Digital Conversion (ADC)
 - Analog sensor acquisition
 - Sensor calibration
-- Moving-average filtering
-- PWM-based servo control
+- Signal filtering
+- Serial communication
+- Bluetooth communication
+- PWM servo control
 - Real-time sensor processing
 - Hardware-software integration
 - Circuit prototyping
-- Embedded system debugging
+- Embedded debugging
 
 ---
 
@@ -206,37 +236,35 @@ This project demonstrates experience with:
 
 ![Sensor Glove](Glove_BLURoboticHand.png)
 
-Wearable prototype containing flex sensors used to measure individual finger movement.
+Wearable glove containing five flex sensors and the glove-side embedded controller.
 
 ### Robotic Hand
 
 ![Robotic Hand](Robotic_Hand_Model.png)
 
-Servo-controlled robotic hand used to reproduce finger positions measured by the sensor glove.
+Servo-controlled robotic hand driven by the second Arduino Uno.
 
 ### Hardware Close-Up
 
 ![Robotic Hand Close-Up](Robotic_HandCloseup.png)
 
-Close-up of the robotic hand hardware and servo integration.
+Prototype hardware used during development and integration of the robotic hand.
 
 ### Circuit Schematic
 
 ![Robotic Hand Schematic](Robotic_Hand_Model_Schematic.png)
 
-Electrical schematic showing the connections between the Arduino Uno and robotic hand hardware.
+Electrical schematic for the robotic hand system.
 
 ---
 
 ## Future Improvements
 
-Potential improvements include:
-
 - Individual calibration profiles for each flex sensor
-- Closed-loop finger position feedback
 - Improved digital filtering
-- Wireless communication between the glove and robotic hand
+- Closed-loop finger position feedback
+- More robust wireless packet handling
 - Custom PCB integration
 - Additional sensors for hand orientation
 - Register-level ATmega328P firmware
-- Non-blocking sensor acquisition and control
+- Non-blocking sensor acquisition and communication
