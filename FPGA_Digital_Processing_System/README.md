@@ -2,7 +2,7 @@
 
 A modular digital convolution-style processing system designed in **Verilog HDL** and verified through simulation and MATLAB.
 
-The project demonstrates **RTL design, memory interfacing, sequential control logic, signed arithmetic datapaths, functional verification, and ASIC physical design**. The verified RTL was also taken through the **OpenLane RTL-to-GDS flow**, including synthesis, floorplanning, placement, routing, and final layout generation.
+The project demonstrates **RTL design, memory interfacing, sequential control logic, signed arithmetic datapaths, functional verification, and ASIC physical design**. The verified RTL was taken through the **OpenLane RTL-to-GDS flow**, including synthesis, floorplanning, power distribution, placement, clock tree synthesis, routing, and final layout generation.
 
 ---
 
@@ -13,8 +13,9 @@ The project demonstrates **RTL design, memory interfacing, sequential control lo
 - [RTL Modules](#rtl-modules)
 - [Verilog Implementation](#verilog-implementation)
 - [Functional Verification](#functional-verification)
+- [Convolution Verification](#convolution-verification)
 - [MATLAB Verification](#matlab-verification)
-- [ASIC Implementation](#asic-implementation)
+- [ASIC Physical Design](#asic-physical-design)
 - [Skills Demonstrated](#skills-demonstrated)
 - [Future Improvements](#future-improvements)
 
@@ -24,15 +25,15 @@ The project demonstrates **RTL design, memory interfacing, sequential control lo
 
 The goal of this project was to design and implement a modular digital processing architecture capable of performing convolution-style arithmetic operations in hardware.
 
-The system uses separate memory modules to store **16-bit input data and coefficient values**. A controller sequentially accesses the memory locations and supplies the data to a signed multiplier.
+The system uses separate memory modules to store **16-bit input data and coefficient values**. A control unit sequentially accesses memory locations and supplies the data to a signed multiplier.
 
-The resulting arithmetic data can then be processed by additional datapath modules for output selection and accumulation.
+The resulting arithmetic data can then be processed by additional datapath modules for output selection and future accumulation operations.
 
 The design was developed using **Verilog HDL** and functionally verified using Verilog testbenches and waveform analysis.
 
-A MATLAB convolution implementation was also used as a reference to compare the hardware-generated results.
+A MATLAB convolution implementation was also used as an independent reference to compare the hardware-generated results.
 
-Finally, the RTL design was taken through the **OpenLane ASIC design flow** to generate a physical layout.
+Finally, the RTL design was taken through the **OpenLane ASIC physical design flow** to generate a final physical layout.
 
 ---
 
@@ -48,9 +49,8 @@ Finally, the RTL design was taken through the **OpenLane ASIC design flow** to g
                         │ A
                         ▼
                  ┌──────────────┐
-                 │  Multiplier  │
-                 │ 16-bit ×     │
-                 │ 16-bit       │
+                 │  Multiplier  │◄──────────── Memory B
+                 │   16 × 16    │              Coefficients
                  └──────┬───────┘
                         │
                         │ 32-bit Product
@@ -71,19 +71,11 @@ Finally, the RTL design was taken through the **OpenLane ASIC design flow** to g
 
 
                  ┌──────────────┐
-                 │   Memory B   │
-                 │ Coefficients │
-                 │  32 × 16-bit │
-                 └──────┬───────┘
-                        │
-                        └──────► Multiplier
-
-
-                 ┌──────────────┐
                  │   Memory C   │
                  │ 32-bit Data  │
                  │   Storage    │
                  └──────────────┘
+
 
         ┌──────────────────────────────┐
         │          Top Module          │
@@ -119,9 +111,11 @@ The module supports synchronous read and write operations controlled by the cloc
 
 During reset, the memory locations are initialized to zero to provide predictable startup behavior.
 
-### Memory A RTL
+### Memory A Verification
 
-<!-- Add Memory A code/schematic image here -->
+The Memory A module was independently simulated to verify correct memory access and data behavior.
+
+![Memory A Simulation](photo.md/image12.png)
 
 ---
 
@@ -139,10 +133,6 @@ A **5-bit address** selects one of the 32 memory locations.
 
 Stored values are provided through the `Bout` output signal during read operations.
 
-### Memory B RTL
-
-<!-- Add Memory B code/schematic image here -->
-
 ### Memory B Verification
 
 The `MemoryB_tb` testbench verifies that values can be correctly written to and retrieved from different memory addresses.
@@ -154,6 +144,8 @@ The simulation checks:
 - Read operations
 - Clock synchronization
 - Data integrity
+
+![Memory B Simulation](photo.md/image15.png)
 
 ---
 
@@ -172,10 +164,6 @@ Address Width: 5 bits
 The module supports synchronous memory operations and asynchronous reset behavior.
 
 Memory C also provides a path for future expansion of the architecture to store accumulated convolution outputs or intermediate processing values.
-
-### Memory C RTL
-
-<!-- Add Memory C code/schematic image here -->
 
 ---
 
@@ -217,8 +205,6 @@ The `RCA2` module provides an arithmetic addition stage.
 
 It adds the current multiplication product to a previous input value to generate a new output.
 
-Conceptually:
-
 ```text
 Previous Value ─────┐
                     ▼
@@ -227,15 +213,15 @@ Product ─────────►  +  ├────► Result
                  └─────┘
 ```
 
-This module provides arithmetic functionality that can be used for accumulation operations in convolution-based processing architectures.
+This module provides the arithmetic foundation for future multiply-accumulate (MAC) operations in a more complete convolution architecture.
 
 ---
 
 ## MUX
 
-The `MUX` module controls whether data is allowed to propagate to the output.
+The `MUX` module controls whether valid data is allowed to propagate to the output.
 
-When the `valid` signal is asserted, the input value is forwarded to `Bi`.
+When the `valid` signal is asserted:
 
 ```text
 valid = 1
@@ -251,7 +237,7 @@ valid = 0
 Bi = 0
 ```
 
-This allows the controller to prevent invalid intermediate data from appearing as valid output.
+This prevents invalid intermediate data from appearing as valid output.
 
 ---
 
@@ -261,13 +247,13 @@ The `CompareB` module performs sequential comparison operations using an interna
 
 The module repeatedly compares the input against an incrementing value and generates a processed output.
 
-Once the comparison sequence has completed, the module asserts a:
+Once the comparison sequence has completed, the module asserts:
 
 ```verilog
 done
 ```
 
-signal to indicate completion.
+to indicate completion.
 
 ---
 
@@ -361,7 +347,7 @@ Generate Valid Outputs
 Compare Results
 ```
 
-The `TopModule_tb` testbench loads values into Memory A and Memory B before initiating the computation using the `start` signal.
+The `TopModule_tb` testbench loads values into Memory A and Memory B before initiating computation using the `start` signal.
 
 Waveform analysis was used to verify synchronization between:
 
@@ -372,15 +358,17 @@ Waveform analysis was used to verify synchronization between:
 - Arithmetic operations
 - Output generation
 
-### Simulation Waveform
+### System Simulation
 
-<!-- Add waveform image here -->
+The following simulation demonstrates the processing system operating with **16 input values and two impulse inputs**.
+
+![16-Input Convolution Simulation](photo.md/image6.png)
 
 ---
 
 # Convolution Verification
 
-The system was tested using the following input sequence:
+The system was also tested using the following input sequence:
 
 ```text
 x[n] =
@@ -398,7 +386,7 @@ h[n] = [2]
 
 For this test case, each input sample is multiplied by the coefficient `2`.
 
-The expected result is therefore:
+The expected result is:
 
 ```text
 y[n] =
@@ -408,15 +396,17 @@ y[n] =
  50, 52, 54, 56, 58, 60, 62, 64]
 ```
 
-### Verilog Simulation Result
+### Final HDL Results
 
-<!-- Add final convolution output image here -->
+The final HDL simulation output demonstrates the resulting data generated by the processing architecture.
+
+![Final Convolution Results](photo.md/image2.png)
 
 ---
 
 # MATLAB Verification
 
-A MATLAB implementation was used as an independent reference for validating the hardware simulation.
+A MATLAB implementation was used as an independent reference for validating the HDL simulation.
 
 The same input sequences used by the Verilog testbench were processed using MATLAB's convolution operation.
 
@@ -427,7 +417,7 @@ h = [2];
 y = conv(x, h);
 ```
 
-The MATLAB results were compared against the corresponding outputs produced by the Verilog simulation.
+The MATLAB results were compared against the corresponding outputs produced by the HDL simulation.
 
 ```text
         Verilog RTL
@@ -435,11 +425,9 @@ The MATLAB results were compared against the corresponding outputs produced by t
              ▼
        Simulation Output
              │
-             │
              ▼
           Compare
              ▲
-             │
              │
        MATLAB conv()
              ▲
@@ -447,79 +435,142 @@ The MATLAB results were compared against the corresponding outputs produced by t
        Reference Input
 ```
 
-The corresponding results matched for the tested input sequence, providing an independent verification of the implemented arithmetic behavior.
-
 ### MATLAB Results
 
-<!-- Add MATLAB verification image here -->
+![MATLAB Verification](photo.md/image4.png)
+
+The corresponding results matched for the tested input sequence, providing an independent verification of the implemented arithmetic behavior.
 
 ---
 
-# ASIC Implementation
+# ASIC Physical Design
 
-After functional RTL verification, the design was processed through the **OpenLane RTL-to-GDS flow**.
+After functional RTL verification, the design was processed through the **OpenLane RTL-to-GDS ASIC design flow**.
 
-The ASIC implementation flow included:
+The physical implementation included several stages required to transform the RTL design into a physical integrated-circuit layout.
 
 ```text
-Verilog RTL
-     │
-     ▼
-Synthesis
-     │
-     ▼
-Floorplanning
-     │
-     ▼
-Placement
-     │
-     ▼
-Routing
-     │
-     ▼
-Physical Layout
-     │
-     ▼
-GDS
+              Verilog RTL
+                   │
+                   ▼
+               Synthesis
+                   │
+                   ▼
+              Floorplanning
+                   │
+                   ▼
+              I/O Placement
+                   │
+                   ▼
+          Tap / Endcap Insertion
+                   │
+                   ▼
+            PDN Generation
+                   │
+                   ▼
+            Global Placement
+                   │
+                   ▼
+           Detailed Placement
+                   │
+                   ▼
+         Clock Tree Synthesis
+                   │
+                   ▼
+            Detailed Routing
+                   │
+                   ▼
+           Final ASIC Layout
+                   │
+                   ▼
+                  GDS
 ```
+
+---
 
 ## Synthesis
 
-The Verilog RTL was synthesized into a gate-level representation of the design.
+The Verilog RTL was synthesized into a gate-level representation of the digital design.
 
-<!-- Add synthesis image/report here -->
+Synthesis translates the behavioral and RTL-level hardware description into standard-cell logic that can be used during physical implementation.
 
 ---
 
 ## Floorplanning
 
-Floorplanning established the physical dimensions and initial organization of the design.
+Floorplanning establishes the physical dimensions and initial organization of the ASIC design.
 
-<!-- Add floorplan image here -->
-
----
-
-## Placement
-
-Standard cells generated from synthesis were physically placed within the floorplan.
-
-<!-- Add placement image here -->
+This stage prepares the design for placement, power distribution, and routing.
 
 ---
 
-## Routing
+## I/O Placement
 
-Routing established the physical interconnections between the placed cells.
+During I/O placement, the design's interface pins were positioned around the physical design boundary.
 
-<!-- Add routing image here -->
+![ASIC I/O Placement](photo.md/image8.png)
+
+---
+
+## Tap and Endcap Cell Insertion
+
+Tap and endcap cells were inserted as part of the physical implementation flow.
+
+These physical-only cells support proper standard-cell row implementation and physical design requirements.
+
+![Tap and Endcap Cell Insertion](photo.md/image13.png)
+
+---
+
+## Power Distribution Network
+
+A **Power Distribution Network (PDN)** was generated to distribute power throughout the physical design.
+
+The PDN provides the power infrastructure required by the standard cells within the ASIC.
+
+![ASIC Power Distribution Network](photo.md/image5.png)
+
+---
+
+## Global Placement
+
+Global placement determines approximate locations for the standard cells while considering design connectivity and available physical area.
+
+![ASIC Global Placement](photo.md/image7.png)
+
+---
+
+## Detailed Placement
+
+Detailed placement refines the locations generated during global placement and aligns standard cells to legal placement sites.
+
+![ASIC Detailed Placement](photo.md/image9.png)
+
+---
+
+## Clock Tree Synthesis
+
+**Clock Tree Synthesis (CTS)** generates the physical clock distribution network used to deliver the clock signal to sequential elements throughout the design.
+
+![ASIC Clock Tree Synthesis](photo.md/image18.png)
+
+---
+
+## Detailed Routing
+
+Detailed routing generates the physical metal interconnections required to connect the placed standard cells.
+
+![ASIC Detailed Routing](photo.md/image17.png)
 
 ---
 
 ## Final ASIC Layout
 
-The completed physical design represents the final stage of the OpenLane flow used in this project.
+After placement, clock-tree generation, and routing, the OpenLane flow produced the final physical layout of the digital processing system.
 
-<!-- Add final OpenLane layout image here -->
+![Final ASIC Layout](photo.md/image3.png)
+
+The final layout represents the physical implementation generated from the original Verilog RTL through the OpenLane RTL-to-GDS flow.
 
 ---
 
@@ -527,28 +578,41 @@ The completed physical design represents the final stage of the OpenLane flow us
 
 This project demonstrates experience with:
 
+### RTL & Digital Design
+
 - Verilog HDL
 - RTL design
-- FPGA-oriented digital design
 - Modular hardware architecture
 - Sequential logic
 - Combinational logic
 - Memory interfacing
 - Signed binary arithmetic
-- Hardware multipliers
+- Hardware multiplication
 - Arithmetic datapaths
 - Control logic
-- Testbench development
+
+### Verification
+
+- Verilog testbench development
 - Waveform analysis
-- Functional verification
+- Module-level verification
+- System-level functional verification
 - MATLAB reference-model verification
-- RTL synthesis
-- ASIC physical design
+
+### ASIC Physical Design
+
 - OpenLane RTL-to-GDS flow
+- RTL synthesis
 - Floorplanning
-- Placement
-- Routing
-- GDS layout generation
+- I/O placement
+- Tap/endcap cell insertion
+- Power Distribution Network generation
+- Global placement
+- Detailed placement
+- Clock Tree Synthesis
+- Detailed routing
+- Physical layout generation
+- GDS generation
 
 ---
 
@@ -562,7 +626,7 @@ Potential extensions to the architecture include:
 - Parallel multiplier architectures
 - Increased processing throughput
 - Parameterized memory depth and data width
-- Additional test vectors
-- Automated RTL/reference-model comparison
+- Additional verification test vectors
+- Automated RTL/MATLAB result comparison
 - FPGA resource and timing optimization
-- ASIC timing and area optimization
+- ASIC timing, power, and area optimization
