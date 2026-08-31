@@ -16,5 +16,8 @@ My interests are in embedded systems, firmware, FPGA/RTL design, hardware-softwa
 - **FPGA Real-Time Sound Board** — FPGA audio system using FSM-based control and timing
 - **Bluetooth Robotic Hand** — Embedded sensor acquisition, wireless communication, and servo control
 
+## Future Projects
+- **Flight + Ground Control System
+
 ### Interests
 Embedded Firmware • FPGA/RTL • Hardware Validation • Hardware Security • Aerospace & Defense Systems
