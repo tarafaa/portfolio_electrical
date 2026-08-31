@@ -6,9 +6,9 @@ My interests are in embedded systems, firmware, FPGA/RTL design, hardware-softwa
 
 ### What I'm Working With
 - **Languages:** C, C++, Python, Verilog, VHDL
-- **Embedded:** ARM, Arduino, FPGA, RTOS
+- **Embedded:** ARM, Arduino, FPGA, RTOS, Raspberry Pi
 - **Interfaces:** SPI, I²C, UART, RS232, Ethernet
-- **Tools:** Vivado, KiCad, Git, oscilloscopes, logic analyzers, and digital multimeters
+- **Tools:** Vivado, KiCad, Git, oscilloscopes, logic analyzers, Programable digital multimeters & powersupplies
 
 ### Featured Projects
 - **RTOS Environmental Monitoring Node** — Real-time sensor acquisition and embedded communication
